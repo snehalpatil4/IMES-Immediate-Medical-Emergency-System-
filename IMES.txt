@@ -1,0 +1,300 @@
+# libraries for downloading json file
+library(RJSONIO)
+library(RCurl)
+
+#downloading data from firebase
+raw_data-getURL(httpshospital3-e1eda.firebaseio.com.json)
+raw_data
+
+# extracting important data
+dataJson-fromJSON(raw_data)
+dataJson
+#spliting to get yn series and co-ordinates
+data_list-as.list(unlist(strsplit(dataJson$Data,)))
+data_list
+lat_min-as.numeric(data_list[2])
+lat_min
+long_min-as.numeric(data_list[3])
+long_min
+#converts data_list[1] into character
+temp-as.character(data_list[[1]])
+temp
+#splits each letter of temp
+series_yn-as.list(unlist(strsplit(temp,)))
+series_yn
+pos_y-c()
+#counts no of Y and N
+n-length(series_yn)
+j-1
+#loop to find positions of Y
+for (i in 1n){
+  if(series_yn[[i]]==Y)
+  {
+    pos_y[[j]]-i
+    j-j+1
+  }
+}
+pos_y
+radians-function(rad){
+  value-((rad3.14)180)
+  return (value)
+}
+#function to calculate distance of hospital
+cal_distance-function(lat1,lon1,lat2,lon2){
+  R-6371
+  fi1-as.numeric(radians(lat1))
+  fi2-as.numeric(radians(lat2))
+  dfi-as.numeric(radians(lat2-lat1))
+  dlm-as.numeric(radians(lon2-lon1))
+  a-as.numeric(sin(dfi2)sin(dfi2)+cos(fi1)cos(fi2)sin(dlm2)sin(dlm2))
+  c-as.numeric(2atan2(sqrt(a),sqrt(1-a)))
+  d-as.numeric(Rc)
+  return(d)
+}
+#function for finding intersection of 
+countit-function(pos_y,list_spl){
+  value -length(intersect(pos_y,list_spl))
+  print(value)
+  store_len-length(pos_y)
+  if(all(pos_y%in%list_spl)){
+    return(1)
+  }
+  else if(valuestore_len-1){
+    
+    return(2)
+  }
+  else{
+    return(-1)
+  }
+  
+}
+#========================================================================================================
+#hospital database connectivity
+library(DBI)
+library(odbc)
+library(RSQLite)
+#connection between database and R server
+con - DBIdbConnect(RSQLiteSQLite(), Csqlitesqlite3hosp_new.db.sqlite3)
+#extracting count of distinct usernames from database
+hos_cnt-dbGetQuery(con,select count(Distinct username) from users_customuser)
+#count of no. of hospitals in database converted to numeric data
+hos_cnt-as.numeric(hos_cnt)
+#extracting longi. and latit. of hospitals from database
+hos_coord-dbGetQuery(con,select g_maps_coords_lat,g_maps_coords_lon from users_customuser)
+hos_coord
+#extracting usernames  from database
+hos_name-dbGetQuery(con,select username from users_customuser)
+#counter variable for storing positions for hospitals in range
+
+#=======================================================distance sorting===================================================
+o-1
+list_hos-c( )
+for (i in 1hos_cnt){
+  dist-cal_distance(lat_min,long_min,hos_coord[i,1],hos_coord[i,2]) #calculates distance of hospital from incident place
+  dist10  
+  print(dist)
+  
+  if(dist10){                                                 #loop for storing positions of hospitals with distance 10km
+    print(dist)
+    list_hos[[o]]-i
+    o-o+1
+  }
+}
+list_hos
+#===============================================================finding hospital with all or two facilities====================================================
+m-1
+x-1
+y-1
+hos_avail-c()
+list_num_allfac-c()
+list_num_2fac-c()
+match_no-0
+for(k in list_hos){
+  hos_fac-paste(select type_of_doctors from users_customuser where id=,k,)
+  hos_avail[[m]]-dbGetQuery(con,hos_fac)
+  Tempp-as.character(split(hos_avail[[m]],f=))
+  Tempp-as.list(unlist(strsplit(Tempp,)))
+  temp2-as.character(110)
+  list_spl-c()
+  h-1
+  for(i in temp2){
+    for(j in Tempp){
+      if(identical(i,j)){
+        if(as.list(as.numeric(j))==1 & h  1){
+          j-10
+        }
+        list_spl[h]-as.list(as.numeric(j))
+        h-h+1
+      }
+    }
+    
+    
+  }
+  match_no-countit(pos_y,list_spl)
+  print(match_no)
+  if(match_no == 1){
+    list_num_allfac[[x]]-k
+    x-x+1
+  }
+  else if(match_no==2){
+    list_num_2fac[[y]]-k
+    y-y+1
+  }
+  else {
+    print(Finding next location)
+  } 
+  
+  m-m+1
+}
+list_spl
+hos_avail
+list_num_allfac
+list_num_2fac
+#===============================================checking=======================================================================
+actual_hosp_sorted-c()
+if(is.null(list_num_allfac)){
+  actual_hosp_sorted-list_num_2fac
+}
+if(!is.null(list_num_allfac)){
+  actual_hosp_sorted-list_num_allfac
+}
+if(is.null(list_num_allfac)&is.null(list_num_2fac)){
+  o-1
+  list_hos2-c( )
+  for (i in 1hos_cnt){
+    dist-cal_distance(lat_min,long_min,hos_coord[i,1],hos_coord[i,2]) #calculates distance of hospital from incident place
+    if(dist15){                                                 #loop for storing positions of hospitals with distance 10km
+      print(dist)
+      list_hos2[[o]]-i
+      o-o+1
+    }
+  }
+  m-1
+  x-1
+  y-1
+  hos_avail-c()
+  list_num_allfac-c()
+  list_num_2fac-c()
+  match_no-0
+  for(k in list_hos2){
+    hos_fac-paste(select type_of_doctors from users_customuser where id=,k,)
+    hos_avail[[m]]-dbGetQuery(con,hos_fac)
+    Tempp-as.character(split(hos_avail[[m]],f=))
+    Tempp-as.list(unlist(strsplit(Tempp,)))
+    temp2-as.character(110)
+    Tempp
+    list_spl-c()
+    h-1
+    for(i in temp2){
+      for(j in Tempp){
+        if(identical(i,j)){
+          if(as.list(as.numeric(j))==1 & h  1){
+            j-10
+          }
+          list_spl[h]-as.list(as.numeric(j))
+          h-h+1
+        }
+      }
+      
+    }
+    list_spl
+    match_no-countit(pos_y,list_spl)
+    print(match_no)
+    if(match_no == 1){
+      list_num_allfac[[x]]-k
+      x-x+1
+    }
+    else if(match_no==2){
+      list_num_2fac[[y]]-k
+      y-y+1
+    }
+    else {
+      print(Finding next location)
+    } 
+    
+    m-m+1
+  }
+  if(is.null(list_num_allfac)){
+    actual_hosp_sorted-list_num_2fac
+  }
+  if(!is.null(list_num_allfac)){
+    actual_hosp_sorted-list_num_allfac
+  }
+}
+dbGetQuery(con,select type_of_doctors from users_customuser where id=2)
+actual_hosp_sorted
+#================================================================================================================================
+final_hosp-c()
+temp_doc_info-c()
+b-1
+for(h in actual_hosp_sorted){
+  que1-paste(select total_no_of_beds from users_customuser where id =,h, )
+  no_of_beds-dbGetQuery(con,que1)
+  no_of_beds
+  que2-paste(select count(patient_user_id) from users_patient where patient_user_id =,h, )
+  no_of_patients-dbGetQuery(con,que2)
+  avail_bed-no_of_beds-no_of_patients
+  if(avail_bed!=0){
+    final_hosp[[b]]-h
+    b-b+1
+  }
+}
+#====================================================%%%%%%%%%%%%%%%%%%%%%%%%+================================================================================
+final_hosp
+e-1
+
+final_hospital-c()
+for(n in final_hosp){
+  query11-paste(select doctor_user_id from temp_doc_id_final where specialized_in=,pos_y,  and doctor_user_id=,n, and is_active=1, )
+  datatp-dbGetQuery(con,query11)
+  print(datatp)
+  if(!is.null(datatp)){
+    final_hospital[[e]]-datatp
+    e-e+1
+  }
+}
+#==================================================================================================================================
+final_hospital
+g-1
+data_later-c()
+length(final_hospital)
+if(length(final_hospital)1){
+  for(m in final_hospital) {
+    distance-cal_distance(lat_min,long_min,hos_coord[m,1],hos_coord[m,2])
+    print(distance)
+    data_later[[g]]-c(m,distance)
+    print(distance)
+    g-g+1
+  }
+  data_later-data.frame(data_later)
+  print(data_later)
+  final_data-order(data_later)
+  print(final_data)
+  for_cords-final_data[[1]]
+  final_hospital[[1]]-for_cords[[1]]
+}
+hos_details-hos_coord[final_hospital[[1]],]
+hos_details
+dataJson$link
+Link-cbind(hos_details[[1]],hos_details[[2]])
+Link
+dataJson$link-Link
+dbDisconnect(con)
+dataJson$link-paste(dataJson$link,collapse = ,)
+dataJson$link
+library(fireData)
+library(fireData)
+#api_key - Sys.getenv(API_KEY)
+#db_url - Sys.getenv(DATABASE_URL)
+#project_id - Sys.getenv(PROJECT_ID)
+#project_domain - Sys.getenv(AUTH_DOMAIN)
+upload(x = dataJson$link, projectURL = httpshospital3-e1eda.firebaseio.com, directory = httpshospital3-e1eda.firebaseio.comloc-LxLIlJs_CA4JZ80_CHV)  
+  #
+
+
+
+
+
+
+
+
